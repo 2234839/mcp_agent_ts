@@ -1,11 +1,12 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { Configuration, OpenAIApi, type ResponseTypes } from 'openai-edge';
+import { Env } from '../env';
 
 const configuration = new Configuration({
-  apiKey: '09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ',
-  basePath: 'https://open.bigmodel.cn/api/paas/v4',
+  apiKey: Env.default_apiKey,
+  basePath: Env.default_apiBaseUrl,
 });
-export const openai = new OpenAIApi(configuration);
+export const defaultOpenai = new OpenAIApi(configuration);
 
 type AI = {
   openai: OpenAIApi;
@@ -16,12 +17,12 @@ type AI = {
 const defaultConfig = {
   //   model: "gpt-3.5-turbo",
   /** 智谱清言 免费模型 */
-  model: 'GLM-4-Flash',
+  model: 'CodeGeeX-4',
   //   max_tokens: undefined,
   max_tokens: 9999,
   temperature: 0.3,
 };
-export async function ai搜索关键词提取(ai: AI, userInput: string) {
+export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai }, userInput: string) {
   // 你是一个专业辅助用户搜索的助手，请从用户的提问之中拆分和联想出可以用于搜索的词组
 
   // ## 你回答的内容
@@ -78,7 +79,11 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
     raw: data,
   };
 }
-export async function ai回答(ai: AI, userInput: string, searchMd: string) {
+export async function ai回答(
+  ai: AI = { openai: defaultOpenai },
+  userInput: string,
+  searchMd: string,
+) {
   const completion = await ai.openai.createChatCompletion({
     model: ai.model ?? defaultConfig.model,
     messages: [
@@ -115,7 +120,11 @@ export async function ai回答(ai: AI, userInput: string, searchMd: string) {
     raw: data,
   };
 }
-export async function aiFunctionCall(ai: AI, mcpClient: Client, userInput: string) {
+export async function aiFunctionCall(
+  ai: AI = { openai: defaultOpenai },
+  mcpClient: Client,
+  userInput: string,
+) {
   const tools = await mcpClient.listTools();
 
   const completion = await ai.openai.createChatCompletion({
@@ -132,9 +141,9 @@ export async function aiFunctionCall(ai: AI, mcpClient: Client, userInput: strin
 
 \`\`\`js
 {
-    callTool:[
-        {name:"tool name",arg:{"参数名":"参数值"}},
-        {name:"other tool name",arg:{"参数名":<任何合法的json值>}}
+    "callTool":[
+        {"name":"tool name","arg":{"参数名":"参数值"}},
+        {"name":"other tool name","arg":{"参数名":<任何合法的json值>}}
         // ... 其他需要调用的tool
     ]
 }
@@ -177,16 +186,21 @@ ${tools.tools
 }
 
 function JSON_parse_AIResponse(resStr: string) {
-  let jsonObj;
+  let jsonStr;
   try {
+    // 如果ai输出的是markdown 代码块形式的json，这里去除掉外层的代码块符号
     if (resStr.startsWith('```')) {
-      const lines = resStr.split('\n');
+      const lines = resStr.trim().split('\n');
       lines[0] = '';
       lines[lines.length - 1] = '';
-      jsonObj = JSON.parse(lines.join('\n'));
+      jsonStr = lines.join('\n').trim();
     } else {
-      jsonObj = JSON.parse(resStr);
+      jsonStr = resStr.trim();
     }
+    // console.log('[jsonStr]====', jsonStr);
+    // console.log('[jsonStr]====');
+
+    const jsonObj = JSON.parse(jsonStr);
     return jsonObj as { callTool?: { name: string; arg: { [key: string]: any } }[] };
   } catch (error: unknown) {
     return error as Error;

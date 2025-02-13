@@ -1,0 +1,15 @@
+name: env2ts
+description: 从env 文件生成对应的ts 代码
+---
+
+```ts src/env/index.ts (1-7)
+import { config } from 'dotenv';
+const { parsed: env } = config();
+
+export const Env = {
+  default_apiKey: env!.default_apiKey as string,
+  default_max_tokens: Number(env!.default_max_tokens),
+};
+```
+## 要将 .env 中的所有配置项添加到代码中
+从 @.env  获取对应的类型来修改 `src/env/index.ts` 文件,只返回 ts 代码

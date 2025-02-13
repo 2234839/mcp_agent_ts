@@ -1,6 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { clientTransport } from '../transport';
-import { aiFunctionCall, openai } from '../ai/openai';
+import { aiFunctionCall, defaultOpenai } from '../ai/openai';
 
 const transport = clientTransport;
 
@@ -20,12 +20,17 @@ const client = new Client(
 async function test() {
   await client.connect(transport);
   console.log('[aiFunctionCall start]');
-  const { res: aiRes } = await aiFunctionCall({ openai }, client, `算出下列算式的答案
+  const { res: aiRes } = await aiFunctionCall(
+    { openai: defaultOpenai },
+    client,
+    `算出下列算式的答案
     1+3=?
-    99*78=?`);
+    99*78=?`,
+  );
   console.log('[aiRes]', JSON.stringify(aiRes, null, 2));
 
   if (aiRes instanceof Error) {
+    console.error(aiRes);
   } else {
     const callToolRes = await Promise.all(
       aiRes.callTool?.map(async ({ name, arg }) => {
