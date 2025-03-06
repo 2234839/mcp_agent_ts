@@ -24,11 +24,9 @@ jobs:
     - name: Build with tsup
       run: pnpm build
 
-    - name: Create deploy branch
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        git checkout -b deploy
-        git add -f dist package.json
-        git commit -m "Deploy build"
-        git push origin deploy --force
+    - name: 部署到自定义分支
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        publish_branch: deploy  # 指定目标分支
