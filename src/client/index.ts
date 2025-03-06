@@ -1,6 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { clientTransport } from '../transport';
-import { aiFunctionCall, defaultOpenai } from '../ai/openai';
+import { clientTransport } from '../transport/index.js';
+import { aiFunctionCall, defaultOpenai } from '../ai/openai.js';
 
 const transport = clientTransport;
 

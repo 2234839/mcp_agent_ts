@@ -1,6 +1,6 @@
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { serverTransport } from '../transport';
+import { serverTransport } from '../transport/index.js';
 // Create an MCP server
 const server = new McpServer({
   name: 'Demo',

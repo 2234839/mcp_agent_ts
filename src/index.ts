@@ -1,2 +1,2 @@
-import "./server"
-import './client'
+import "./server/index"
+import './client/index'
