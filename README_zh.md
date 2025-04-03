@@ -8,4 +8,4 @@
 
 - [x] 基于 mcp
 - [x] 自动调用 mcp 提供的资源
-- [ ] 基于 openai-edge 对接开放模型
+- [ ] 基于 openai 对接开放模型

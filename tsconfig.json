@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
       "target": "ES2020", // 指定编译后的 JavaScript 目标版本
-      "module": "NodeNext", // 使用 ESNext 模块系统
-      "moduleResolution": "NodeNext", // 使用 Node.js 的模块解析策略
+      "module": "ESNext", // 使用 ESNext 模块系统
+      "moduleResolution": "bundler", // 使用 Node.js 的模块解析策略
       "strict": true, // 启用所有严格类型检查选项
       "esModuleInterop": true, // 允许使用 CommonJS 模块的默认导入
       "skipLibCheck": true, // 跳过库文件的类型检查

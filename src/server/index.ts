@@ -1,12 +1,11 @@
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { serverTransport } from '../transport/index.js';
 // Create an MCP server
-const server = new McpServer({
+export const defalutServer = new McpServer({
   name: 'Demo',
   version: '1.0.0',
 });
-server.prompt('review-code', { code: z.string() }, ({ code }) => ({
+defalutServer.prompt('review-code', { code: z.string() }, ({ code }) => ({
   messages: [
     {
       role: 'user',
@@ -18,14 +17,14 @@ server.prompt('review-code', { code: z.string() }, ({ code }) => ({
   ],
 }));
 // Add an addition tool
-server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }) => ({
+defalutServer.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }) => ({
   content: [{ type: 'text', text: String(a + b) }],
 }));
-server.tool('乘法', { a: z.number(), b: z.number() }, async ({ a, b }) => ({
+defalutServer.tool('乘法', { a: z.number(), b: z.number() }, async ({ a, b }) => ({
   content: [{ type: 'text', text: String(a * b) }],
 }));
 // Add a dynamic greeting resource
-server.resource(
+defalutServer.resource(
   'greeting',
   new ResourceTemplate('greeting://{name}', { list: undefined }),
   async (uri, { name }) => ({
@@ -37,7 +36,3 @@ server.resource(
     ],
   }),
 );
-
-// Start receiving messages on stdin and sending messages on stdout
-const transport = serverTransport;
-server.connect(transport);

@@ -8,4 +8,4 @@ This is a tool that I created to facilitate the creation of agents based on mcp
 
 - [x] Based on mcp
 - [x] Automatically call resources provided by mcp
-- [ ] Based on openai-edge to connect to open models
+- [ ] Based on openai to connect to open models

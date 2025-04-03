@@ -1,15 +1,16 @@
-import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { Configuration, OpenAIApi, type ResponseTypes } from 'openai-edge';
+import { Effect } from 'effect';
+import { ClientOptions, OpenAI } from 'openai';
+import { AiService, McpClientService } from 'src/service';
 import { Env } from '../env';
 
-const configuration = new Configuration({
+const configuration: ClientOptions = {
   apiKey: Env.default_apiKey,
-  basePath: Env.default_apiBaseUrl,
-});
-export const defaultOpenai = new OpenAIApi(configuration);
+  baseURL: Env.default_apiBaseUrl,
+};
+export const defaultOpenai = new OpenAI(configuration);
 
-type AI = {
-  openai: OpenAIApi;
+export type AI = {
+  openai: OpenAI;
   model?: string;
   max_tokens?: number;
   temperature?: number;
@@ -32,12 +33,13 @@ export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai }
   // ## 搜索引擎的特性
   // 1. 搜索程序支持使用空格连接多个关键词
   // 2. 有时候单个关键词可以搜索到相关内容，多个关键词连接反而搜索不到，所以你不仅要返回空格连接的多个关键词，还应该返回需要搜索的单个关键词之类的，但是太多的单个关键词又可能搜索到无关紧要的内容，这个就是需要你取舍的地方了
-  const completion = await ai.openai.createChatCompletion({
-    model: ai.model ?? defaultConfig.model,
-    messages: [
-      {
-        role: 'system',
-        content: `你是一名助理，专门协助用户进行搜索。请按照以下规则提供答案：
+  const completion: OpenAI.Chat.Completions.ChatCompletion =
+    await ai.openai.chat.completions.create({
+      model: ai.model ?? defaultConfig.model,
+      messages: [
+        {
+          role: 'system',
+          content: `你是一名助理，专门协助用户进行搜索。请按照以下规则提供答案：
 
 1. 输出格式：**JSON 格式**，不要使用代码块,要确保你的回答可以直接被 JSON.parse。
 2. 内容要求：
@@ -51,15 +53,14 @@ export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai }
 用户: “有哪些关键词”
 你: ["关键词1", "关键词2"]
 `,
-      },
-      { role: 'user', content: userInput },
-    ],
-    max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
-    temperature: ai.temperature ?? defaultConfig.temperature,
-    stream: false,
-  });
-  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
-  const resStr = data.choices[0].message!.content!;
+        },
+        { role: 'user', content: userInput },
+      ],
+      stream: false,
+      max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
+      temperature: ai.temperature ?? defaultConfig.temperature,
+    });
+  const resStr = completion.choices[0].message!.content!;
   let queryArr;
   try {
     if (resStr.startsWith('```')) {
@@ -76,7 +77,7 @@ export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai }
   }
   return {
     res: queryArr,
-    raw: data,
+    raw: resStr,
   };
 }
 export async function ai回答(
@@ -84,12 +85,13 @@ export async function ai回答(
   userInput: string,
   searchMd: string,
 ) {
-  const completion = await ai.openai.createChatCompletion({
-    model: ai.model ?? defaultConfig.model,
-    messages: [
-      {
-        role: 'system',
-        content: `你是用户的笔记ai提问助手，请根据用户的问题和你检索到的笔记内容来回答用户的问题
+  const completion: OpenAI.Chat.Completions.ChatCompletion =
+    await ai.openai.chat.completions.create({
+      model: ai.model ?? defaultConfig.model,
+      messages: [
+        {
+          role: 'system',
+          content: `你是用户的笔记ai提问助手，请根据用户的问题和你检索到的笔记内容来回答用户的问题
 ## 回答的格式
 
 你的回答要表示是基于哪些块的内容回答的，表现方式是在对应回答的后面添加 :[种花心得(这个块的内容摘要)](siyuan://blocks/20240113141417-va4uedb(笔记块的id))
@@ -103,86 +105,116 @@ export async function ai回答(
 
 ## 注意你的回答最后面附加的链接 [] 内填的是这个块的摘要文本 () 中的 siyuan://blocks/id 是思源特有的链接方式
 `,
-      },
-      {
-        role: 'assistant',
-        content: `检索到的内容:\n${searchMd}`,
-      },
-      { role: 'user', content: userInput },
-    ],
-    max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
-    temperature: ai.temperature ?? defaultConfig.temperature,
-    stream: false,
-  });
-  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
+        },
+        {
+          role: 'assistant',
+          content: `检索到的内容:\n${searchMd}`,
+        },
+        { role: 'user', content: userInput },
+      ],
+      max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
+      temperature: ai.temperature ?? defaultConfig.temperature,
+      stream: false,
+    });
+  const data = completion;
   return {
     res: data.choices[0].message!.content!,
     raw: data,
   };
 }
-export async function aiFunctionCall(
-  ai: AI = { openai: defaultOpenai },
-  mcpClient: Client,
-  userInput: string,
-) {
-  const tools = await mcpClient.listTools();
 
-  const completion = await ai.openai.createChatCompletion({
-    model: ai.model ?? defaultConfig.model,
-    messages: [
-      {
-        role: 'system',
-        content: `你是一个 aiFunctionCall ，主要就是通过分析用户的输入来判断是否要调用mcp server提供的某些功能
-如果你判断解决用户的问题需要调用对应的功能就回复相应的代码,后续会通过 js 来调用这些工具返回结果给用户的
-## 你的回复应该是一个合法的json，可以直接被 JSON.parse() 解析，不需要额外的处理。
+/** 查询 mcp server 提供的工具，并根据用户输入调用相应的工具  */
+export function aiFunctionCall(userInput: string) {
+  return Effect.gen(function* () {
+    const mcpClient = yield* McpClientService;
+    const tools = yield* Effect.tryPromise(() => mcpClient.listTools());
+    const ai = yield* AiService;
 
-## 调用 tool 的回复示例
-### 注意，你应该在callTool 数组中列出所有需要调用的tool，并且每个tool的参数都放在callTool数组中。例如：
+    const completion: OpenAI.Chat.Completions.ChatCompletion = yield* Effect.tryPromise(() =>
+      ai.openai.chat.completions.create({
+        model: ai.model ?? defaultConfig.model,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `你是 aiFunctionCall 就是通过分析用户的输入来选择调用对应的 Tool
+  如果你判断解决用户的问题需要调用对应的功能就回复相应的代码,后续会通过 js 来调用这些工具返回结果给用户的
+  ## 你的回复应该是合法的json，可以直接被 JSON.parse() 解析，不需要额外的处理！！（意味着你不要输出除了json之外的任何文本）。
 
-\`\`\`js
-{
-    "callTool":[
-        {"name":"tool name","arg":{"参数名":"参数值"}},
-        {"name":"other tool name","arg":{"参数名":<任何合法的json值>}}
-        // ... 其他需要调用的tool
-    ]
-}
-\`\`\`
-  `,
-      },
-      {
-        role: 'assistant',
-        content: `#mcp server提供的功能
-## tools
-${tools.tools
-  .map((tool) => {
-    const toolStr =
-      `### ${tool.name}\n` +
-      (tool.description ? `- **description**: ${tool.description}\n` : '') +
-      `
-- **parameters**: ${JSON.stringify({
-        ...tool.inputSchema,
-        //#region 去除一些没啥用的字段
-        type: undefined,
-        $schema: undefined,
-        //#endregion 去除一些没啥用的字段
-      })}
-`;
-    return toolStr;
-  })
-  .join('\n\n')}`,
-      },
-      { role: 'user', content: userInput },
-    ],
-    max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
-    temperature: ai.temperature ?? defaultConfig.temperature,
-    stream: false,
+  ## 调用 tool 的回复示例
+  ### 注意：你应该在callTool 数组中列出所有需要调用的tool，并且每个tool的参数都放在callTool数组中，tool 的 name 应该严格和 assistant 所提供的对应。例如：
+
+  \`\`\`js
+  {
+      "callTool":[
+          {"name":"other tool name","arg":{"参数名":<任何合法的json值>}}
+          // ... 其他需要调用的tool
+      ]
+  }
+  \`\`\`
+    `,
+          },
+          {
+            role: 'assistant',
+            content: `## tools
+  ${tools.tools
+    .map((tool) => {
+      const toolStr =
+        `### ${tool.name}\n` +
+        (tool.description ? `- **description**: ${tool.description}\n` : '') +
+        `
+  - **parameters**: ${JSON.stringify({
+    ...tool.inputSchema,
+    //#region 去除一些没啥用的字段
+    type: undefined,
+    $schema: undefined,
+    //#endregion 去除一些没啥用的字段
+  })}
+  `;
+      return toolStr;
+    })
+    .join('\n\n')}`,
+          },
+          { role: 'user', content: userInput },
+        ],
+        max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
+        temperature: ai.temperature ?? defaultConfig.temperature,
+        stream: false,
+      }),
+    );
+    const data = completion;
+    return {
+      res: JSON_parse_AIResponse(data.choices[0].message!.content!),
+      raw: data,
+    };
   });
-  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
-  return {
-    res: JSON_parse_AIResponse(data.choices[0].message!.content!),
-    raw: data,
-  };
+}
+/** 简化文本输出人类易读的文本  */
+export function aiSimpleText(text: string) {
+  return Effect.gen(function* () {
+    const ai = yield* AiService;
+
+    const completion: OpenAI.Chat.Completions.ChatCompletion = yield* Effect.tryPromise(() =>
+      ai.openai.chat.completions.create({
+        model: ai.model ?? defaultConfig.model,
+        messages: [
+          {
+            role: 'system',
+            content: `请你分析用户给出的内容，返回人类简易可读的文本,你不需要给出任何解释，只需要尽量的简化文本，让其他用户一眼就能看懂`,
+          },
+          { role: 'user', content: text },
+        ],
+        max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
+        temperature: ai.temperature ?? defaultConfig.temperature,
+        stream: false,
+      }),
+    );
+    const data = completion;
+    return {
+      res: data.choices[0].message!.content!.trim(),
+      raw: data,
+    };
+  });
 }
 
 function JSON_parse_AIResponse(resStr: string) {
