@@ -18,7 +18,7 @@ export type AI = {
 const defaultConfig = {
   //   model: "gpt-3.5-turbo",
   /** 智谱清言 免费模型 */
-  model: 'CodeGeeX-4',
+  model: 'GLM-4-Flash',
   //   max_tokens: undefined,
   max_tokens: 9999,
   temperature: 0.3,
@@ -147,7 +147,7 @@ export function aiFunctionCall(userInput: string) {
   \`\`\`js
   {
       "callTool":[
-          {"name":"other tool name","arg":{"参数名":<任何合法的json值>}}
+          {"name":"<对应tool的name>","arg":{"参数名":<任何合法的json值>}}
           // ... 其他需要调用的tool
       ]
   }
