@@ -11,4 +11,8 @@ export const Env = {
   // 用于单元测试的环境变量
   bigmodel_apiKey: env!.bigmodel_apiKey as string,
   bigmodel_apiBaseUrl: env!.bigmodel_apiBaseUrl as string,
-};
+
+  // 思源配置
+  siyuan_baseUrl: env!.siyuan_baseUrl as string,
+  siyuan_apiKey: env!.siyuan_apiKey as string,
+} as const;

@@ -129,7 +129,7 @@ export function aiFunctionCall(userInput: string) {
     const mcpClient = yield* McpClientService;
     const tools = yield* Effect.tryPromise(() => mcpClient.listTools());
     const ai = yield* AiService;
-
+    console.log('[tools]',tools);
     const completion: OpenAI.Chat.Completions.ChatCompletion = yield* Effect.tryPromise(() =>
       ai.openai.chat.completions.create({
         model: ai.model ?? defaultConfig.model,
@@ -137,9 +137,10 @@ export function aiFunctionCall(userInput: string) {
         messages: [
           {
             role: 'system',
-            content: `你是 aiFunctionCall 就是通过分析用户的输入来选择调用对应的 Tool
-  如果你判断解决用户的问题需要调用对应的功能就回复相应的代码,后续会通过 js 来调用这些工具返回结果给用户的
-  ## 你的回复应该是合法的json，可以直接被 JSON.parse() 解析，不需要额外的处理！！（意味着你不要输出除了json之外的任何文本）。
+            content: `你是 aiFunctionCall 就是通过分析user的输入来选择调用对应的 Tool
+  如果你判断解决user的问题需要调用对应的功能就回复相应的代码,后续会通过 js 来调用这些工具返回结果给user的
+  ### 注意:无论user询问什么，你都不要直接回答！！，而应该思考调用什么工具能够解决问题
+  ### 注意:你的回复应该是合法的json，可以直接被 JSON.parse() 解析，不需要额外的处理！！（意味着你不要输出除了json之外的任何文本）。
 
   ## 调用 tool 的回复示例
   ### 注意：你应该在callTool 数组中列出所有需要调用的tool，并且每个tool的参数都放在callTool数组中，tool 的 name 应该严格和 assistant 所提供的对应。例如：
