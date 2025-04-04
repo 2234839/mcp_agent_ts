@@ -1,13 +1,13 @@
 "use strict";
 
-// src/server/index.ts
+// src/server/testServer.ts
 var import_mcp = require("@modelcontextprotocol/sdk/server/mcp.js");
 var import_zod = require("zod");
-var defalutServer = new import_mcp.McpServer({
+var testServer = new import_mcp.McpServer({
   name: "Demo",
   version: "1.0.0"
 });
-defalutServer.prompt("review-code", { code: import_zod.z.string() }, ({ code }) => ({
+testServer.prompt("review-code", { code: import_zod.z.string() }, ({ code }) => ({
   messages: [
     {
       role: "user",
@@ -20,13 +20,13 @@ ${code}`
     }
   ]
 }));
-defalutServer.tool("add", { a: import_zod.z.number(), b: import_zod.z.number() }, async ({ a, b }) => ({
+testServer.tool("add", { a: import_zod.z.number(), b: import_zod.z.number() }, async ({ a, b }) => ({
   content: [{ type: "text", text: String(a + b) }]
 }));
-defalutServer.tool("\u4E58\u6CD5", { a: import_zod.z.number(), b: import_zod.z.number() }, async ({ a, b }) => ({
+testServer.tool("\u4E58\u6CD5", { a: import_zod.z.number(), b: import_zod.z.number() }, async ({ a, b }) => ({
   content: [{ type: "text", text: String(a * b) }]
 }));
-defalutServer.resource(
+testServer.resource(
   "greeting",
   new import_mcp.ResourceTemplate("greeting://{name}", { list: void 0 }),
   async (uri, { name }) => ({
