@@ -3,7 +3,7 @@ import { AiService, McpClientService } from './service';
 import { aiSimpleText, aiFunctionCall, defaultOpenai } from './ai/openai';
 import { defaultClient } from './client';
 import { clientTransport, serverTransport } from './transport';
-import { defalutServer } from './server';
+import { testServer } from './server/testServer';
 
 const testP = Effect.gen(function* () {
   const client = yield* McpClientService;
@@ -40,7 +40,7 @@ const testP = Effect.gen(function* () {
 
 async function test() {
   // 这里必须要让 defalutServer 先连接
-  await defalutServer.connect(serverTransport);
+  await testServer.connect(serverTransport);
   await defaultClient.connect(clientTransport);
 
   const context = Context.empty().pipe(

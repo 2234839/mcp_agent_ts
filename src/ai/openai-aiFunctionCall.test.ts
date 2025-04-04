@@ -4,7 +4,7 @@ import { Env } from 'src/env';
 import { AiService, McpClientService } from 'src/service';
 import { describe, expect, it, vi } from 'vitest';
 import { aiFunctionCall } from './openai';
-import { defalutServer } from 'src/server';
+import { testServer } from 'src/server/testServer';
 import { defaultClient } from 'src/client';
 import { clientTransport, serverTransport } from 'src/transport';
 vi.setConfig({ testTimeout: 25_000 });
@@ -18,7 +18,7 @@ describe.each([
     const userInput = `算出下列算式的答案
       1+3=?
       99*7890=?`;
-    await defalutServer.connect(serverTransport);
+    await testServer.connect(serverTransport);
     await defaultClient.connect(clientTransport);
 
     const context = Context.empty().pipe(
