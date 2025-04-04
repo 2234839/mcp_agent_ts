@@ -4,9 +4,10 @@ import { Env } from 'src/env';
 import { AiService, McpClientService } from 'src/service';
 import { describe, expect, it, vi } from 'vitest';
 import { aiFunctionCall } from './openai';
-import { testServer } from 'src/server/testServer';
 import { defaultClient } from 'src/client';
 import { clientTransport, serverTransport } from 'src/transport';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 vi.setConfig({ testTimeout: 25_000 });
 describe.each([
   { model: 'glm-4' }, // 测试 glm-4
@@ -46,3 +47,13 @@ describe.each([
     );
   });
 });
+const testServer = new McpServer({
+  name: 'test',
+  version: '1.0.0',
+});
+testServer.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }) => ({
+  content: [{ type: 'text', text: String(a + b) }],
+}));
+testServer.tool('乘法', { a: z.number(), b: z.number() }, async ({ a, b }) => ({
+  content: [{ type: 'text', text: String(a * b) }],
+}));
