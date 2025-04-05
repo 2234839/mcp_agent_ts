@@ -1,6 +1,6 @@
 {
   "name": "mcp_agent_ts",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -12,6 +12,10 @@
     ".": "./dist/index.js",
     "./siyuan": "./dist/siyuan.js"
   },
+  "files": [
+    "./dist",
+    "*.md"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
