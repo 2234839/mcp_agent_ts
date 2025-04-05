@@ -1,5 +1,14 @@
 import { defineConfig } from 'tsup';
+import packageJson from './package.json';
+// @ts-ignore
+import fs from 'fs';
+// 解析当前版本号
+const [major, minor, patch] = packageJson.version.split('.').map(Number);
 
+// 增加小版本号
+const newVersion = `${major}.${minor}.${patch + 1}`;
+packageJson.version = newVersion;
+fs.writeFileSync('./package.json', JSON.stringify(packageJson, null, 2));
 export default defineConfig({
   entry: {
     // 多入口配置
