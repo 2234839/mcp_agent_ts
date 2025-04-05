@@ -1,5 +1,5 @@
 {
-  "name": "mcp_test",
+  "name": "mcp_agent_ts",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -7,6 +7,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsup"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./siyuan": "./dist/siyuan.js"
   },
   "keywords": [],
   "author": "",

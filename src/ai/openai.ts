@@ -129,6 +129,7 @@ export function aiFunctionCall(userInput: string) {
     const mcpClient = yield* McpClientService;
     const tools = yield* Effect.tryPromise(() => mcpClient.listTools());
     const ai = yield* AiService;
+
     console.log('[tools]',tools);
     const completion: OpenAI.Chat.Completions.ChatCompletion = yield* Effect.tryPromise(() =>
       ai.openai.chat.completions.create({

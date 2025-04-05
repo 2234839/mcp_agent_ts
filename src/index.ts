@@ -1,2 +1,1 @@
-import "./server/testServer"
-import './client/index'
+export * from "./service/index"

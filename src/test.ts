@@ -7,6 +7,7 @@ import { testServer } from './server/testServer';
 import { siyuanServer } from './server/siyuan';
 import { Env } from './env';
 import { callTool } from './client/util';
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 
 const testP = Effect.gen(function* () {
   const client = yield* McpClientService;
@@ -29,8 +30,11 @@ const testP = Effect.gen(function* () {
 
 const testSiyuan = Effect.gen(function* ($) {
   const server = yield* siyuanServer;
-  yield* Effect.tryPromise(() => server.connect(serverTransport));
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const rawQuery = `OceanPress 是什么？`;
+  const t = yield* aiFunctionCall(rawQuery);
+  yield* Effect.tryPromise(() => server.connect(serverTransport));
+  yield* Effect.tryPromise(() => defaultClient.connect(clientTransport));
   const { res } = yield* aiFunctionCall(rawQuery);
   if (res instanceof Error) {
   } else {
