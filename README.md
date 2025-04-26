@@ -1,6 +1,6 @@
 # mcp_agent_ts
 
-[Chinese Document](./README_zh.md) [English Document](./README.md)
+[中文文档](./README_zh.md) [English Document](./README.md)
 
 This is a tool I created to simplify the creation of agents based on mcp.
 

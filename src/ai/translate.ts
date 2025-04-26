@@ -24,7 +24,13 @@ export async function translateText(
     messages: [
       {
         role: 'system',
-        content: `You are a professional translator. Translate the following text to ${options.targetLanguage} while preserving the original formatting, markdown syntax, and technical terms accuracy.`
+        content: `You are a professional translator. Translate the following text to ${options.targetLanguage} while strictly preserving:
+1. Original formatting and markdown syntax
+2. Technical terms accuracy
+3. Any text inside markdown links like \`[中文文档](./README_zh.md)\` or \`[English Doc](./README.md)\` MUST REMAIN UNCHANGED
+4. Code blocks and inline code snippets MUST NOT be translated
+
+特别注意：如果遇到类似 \`[...文档...](...)\` 的Markdown链接，无论其中是什么语言，都原样保留不要翻译`
       },
       { role: 'user', content: text }
     ],
