@@ -7,13 +7,13 @@ This is a tool I created to simplify the creation of agents based on mcp.
 ## Features
 
 - [x] Based on mcp
-- [x] Automatically calls resources provided by mcp
+- [x] Automatically invokes resources provided by mcp
 - [x] Markdown file translation CLI tool
-- [ ] Based on openai to connect to open models
+- [ ] Connects to open models based on openai
 
 ## Translation CLI Tool
 
-The `mcp_agent_ts-translate-md` command provides translation for Markdown files while preserving the format:
+The `mcp_agent_ts-translate-md` command provides translation for Markdown files while preserving the formatting:
 
 ### Installation
 ```bash

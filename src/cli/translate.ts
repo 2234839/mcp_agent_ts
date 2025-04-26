@@ -3,6 +3,10 @@ import { program } from 'commander';
 import { translateMarkdownFile } from '../ai/translate';
 import { readFileSync } from 'fs';
 import path from 'path';
+import { Effect } from 'effect';
+import { AiService } from 'src/service';
+import { defaultOpenai } from 'src/ai/openai';
+import { Env } from 'src/env';
 
 program
   .name('mcp_agent_ts-translate-md')
@@ -16,18 +20,21 @@ program
   .requiredOption('-o, --output <path>', 'Output file path')
   .requiredOption('-l, --language <language>', 'Target language (e.g. "Chinese", "French")')
   .action(async (options) => {
-    try {
-      console.log(`Translating ${options.input} to ${options.language}...`);
-      await translateMarkdownFile(
+    console.log(`Translating ${options.input} to ${options.language}...`);
+
+    const r = await Effect.runPromise(
+      translateMarkdownFile(
         path.resolve(options.input),
         path.resolve(options.output),
-        { targetLanguage: options.language }
-      );
-      console.log(`Translation saved to ${options.output}`);
-    } catch (error) {
-      console.error('Translation failed:', error);
-      process.exit(1);
-    }
+        options.language,
+      ).pipe(
+        Effect.provideService(AiService, {
+          openai: defaultOpenai,
+          model: Env.default_model,
+        }),
+      ),
+    );
+    console.log(`Translation saved to ${options.output}`);
   });
 
 program.parseAsync(process.argv).catch(console.error);

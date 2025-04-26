@@ -52,7 +52,7 @@ async function test() {
     Context.add(McpClientService, defaultClient),
     Context.add(AiService, {
       openai: defaultOpenai,
-      // model: 'glm-4'
+      model: Env.default_model,
     }),
     Context.add(SiyuanService, {
       conf: {

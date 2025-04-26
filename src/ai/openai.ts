@@ -11,7 +11,7 @@ export const defaultOpenai = new OpenAI(configuration);
 
 export type AI = {
   openai: OpenAI;
-  model?: string;
+  model: string;
   max_tokens?: number;
   temperature?: number;
 };
@@ -23,7 +23,7 @@ const defaultConfig = {
   max_tokens: 9999,
   temperature: 0.3,
 };
-export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai }, userInput: string) {
+export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai ,model:Env.default_model}, userInput: string) {
   // 你是一个专业辅助用户搜索的助手，请从用户的提问之中拆分和联想出可以用于搜索的词组
 
   // ## 你回答的内容
@@ -81,7 +81,7 @@ export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai }
   };
 }
 export async function ai回答(
-  ai: AI = { openai: defaultOpenai },
+  ai: AI = { openai: defaultOpenai,model:Env.default_model },
   userInput: string,
   searchMd: string,
 ) {
