@@ -23,23 +23,21 @@ const defaultConfig = {
   max_tokens: 9999,
   temperature: 0.3,
 };
-export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai ,model:Env.default_model}, userInput: string) {
-  // 你是一个专业辅助用户搜索的助手，请从用户的提问之中拆分和联想出可以用于搜索的词组
+export function ai搜索关键词提取(
+  userInput: string,
+  ai: AI = { openai: defaultOpenai, model: Env.default_model }
+): Effect.Effect<{ res: string[]; raw: string }, Error, AiService> {
+  return Effect.gen(function* () {
+    const aiService = yield* AiService;
+    const aiWithService = { ...ai, openai: aiService.openai };
 
-  // ## 你回答的内容
-  // 1. 格式：你的回答应该是一个单行json字符串数组，不要包含其他的内容
-  // 2. 不仅仅要包含用户提问中出现过的关键词，你还应该要联想到关键词的可能变体
-
-  // ## 搜索引擎的特性
-  // 1. 搜索程序支持使用空格连接多个关键词
-  // 2. 有时候单个关键词可以搜索到相关内容，多个关键词连接反而搜索不到，所以你不仅要返回空格连接的多个关键词，还应该返回需要搜索的单个关键词之类的，但是太多的单个关键词又可能搜索到无关紧要的内容，这个就是需要你取舍的地方了
-  const completion: OpenAI.Chat.Completions.ChatCompletion =
-    await ai.openai.chat.completions.create({
-      model: ai.model ?? defaultConfig.model,
-      messages: [
-        {
-          role: 'system',
-          content: `你是一名助理，专门协助用户进行搜索。请按照以下规则提供答案：
+    const completion = yield* Effect.tryPromise({
+      try: () => aiWithService.openai.chat.completions.create({
+        model: aiWithService.model ?? defaultConfig.model,
+        messages: [
+          {
+            role: 'system',
+            content: `你是一名助理，专门协助用户进行搜索。请按照以下规则提供答案：
 
 1. 输出格式：**JSON 格式**，不要使用代码块,要确保你的回答可以直接被 JSON.parse。
 2. 内容要求：
@@ -53,14 +51,17 @@ export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai ,
 用户: “有哪些关键词”
 你: ["关键词1", "关键词2"]
 `,
-        },
-        { role: 'user', content: userInput },
-      ],
-      stream: false,
-      max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
-      temperature: ai.temperature ?? defaultConfig.temperature,
-    });
-  const resStr = completion.choices[0].message!.content!;
+          },
+          { role: 'user', content: userInput },
+        ],
+        stream: false,
+        max_tokens: aiWithService.max_tokens ?? defaultConfig.max_tokens,
+        temperature: aiWithService.temperature ?? defaultConfig.temperature
+      }),
+    catch: (e) => new Error(`Keyword extraction failed: ${e}`)
+  });
+
+  const resStr = completion.choices[0].message?.content || '';
   let queryArr;
   try {
     if (resStr.startsWith('```')) {
@@ -72,26 +73,30 @@ export async function ai搜索关键词提取(ai: AI = { openai: defaultOpenai ,
       queryArr = JSON.parse(resStr);
     }
   } catch (error) {
-    console.log('[error]', error);
     queryArr = [resStr];
   }
   return {
     res: queryArr,
     raw: resStr,
   };
+});
 }
-export async function ai回答(
-  ai: AI = { openai: defaultOpenai,model:Env.default_model },
+export function ai回答(
   userInput: string,
   searchMd: string,
-) {
-  const completion: OpenAI.Chat.Completions.ChatCompletion =
-    await ai.openai.chat.completions.create({
-      model: ai.model ?? defaultConfig.model,
-      messages: [
-        {
-          role: 'system',
-          content: `你是用户的笔记ai提问助手，请根据用户的问题和你检索到的笔记内容来回答用户的问题
+  ai: AI = { openai: defaultOpenai, model: Env.default_model }
+): Effect.Effect<{ res: string; raw: OpenAI.Chat.Completions.ChatCompletion }, Error, AiService> {
+  return Effect.gen(function* () {
+    const aiService = yield* AiService;
+    const aiWithService = { ...ai, openai: aiService.openai };
+
+    const completion = yield* Effect.tryPromise({
+      try: () => aiWithService.openai.chat.completions.create({
+        model: aiWithService.model ?? defaultConfig.model,
+        messages: [
+          {
+            role: 'system',
+            content: `你是用户的笔记ai提问助手，请根据用户的问题和你检索到的笔记内容来回答用户的问题
 ## 回答的格式
 
 你的回答要表示是基于哪些块的内容回答的，表现方式是在对应回答的后面添加 :[种花心得(这个块的内容摘要)](siyuan://blocks/20240113141417-va4uedb(笔记块的id))
@@ -105,22 +110,25 @@ export async function ai回答(
 
 ## 注意你的回答最后面附加的链接 [] 内填的是这个块的摘要文本 () 中的 siyuan://blocks/id 是思源特有的链接方式
 `,
-        },
-        {
-          role: 'assistant',
-          content: `检索到的内容:\n${searchMd}`,
-        },
-        { role: 'user', content: userInput },
-      ],
-      max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
-      temperature: ai.temperature ?? defaultConfig.temperature,
-      stream: false,
+          },
+          {
+            role: 'assistant',
+            content: `检索到的内容:\n${searchMd}`,
+          },
+          { role: 'user', content: userInput },
+        ],
+        max_tokens: aiWithService.max_tokens ?? defaultConfig.max_tokens,
+        temperature: aiWithService.temperature ?? defaultConfig.temperature,
+        stream: false,
+      }),
+      catch: (e) => new Error(`AI回答失败: ${e}`)
     });
-  const data = completion;
-  return {
-    res: data.choices[0].message!.content!,
-    raw: data,
-  };
+
+    return {
+      res: completion.choices[0].message?.content || '',
+      raw: completion,
+    };
+  });
 }
 
 /** 查询 mcp server 提供的工具，并根据用户输入调用相应的工具  */
