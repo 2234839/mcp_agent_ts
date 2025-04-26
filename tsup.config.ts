@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsup';
+// @ts-ignore
 import packageJson from './package.json';
 // @ts-ignore
 import fs from 'fs';
@@ -14,6 +15,7 @@ export default defineConfig({
     // 多入口配置
     index: 'src/index.ts',
     siyuan: 'src/server/siyuan/index.ts',
+    'cli/translate': 'src/cli/translate.ts',
   },
   splitting: true,
   sourcemap: true,

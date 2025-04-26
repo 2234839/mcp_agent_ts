@@ -1,11 +1,11 @@
 # mcp_agent_ts
 
-[english readme](./README.md)
+[中文文档](./README_zh.md)
 
-这是一个方便我自己创建基于 mcp 的 agent 的示例项目
+这是一个我创建的工具，用于简化基于 mcp 创建代理的过程。
 
-## 特性
+## 功能
 
 - [x] 基于 mcp
-- [x] 可自动调用 mcp 提供的资源
-- [x] 基于 openai 对接开放模型
+- [x] 自动调用 mcp 提供的资源
+- [ ] 基于 openai 连接到开放模型
