@@ -5,7 +5,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 
 program
-  .name('translate-md')
+  .name('mcp_agent_ts-translate-md')
   .description('CLI tool to translate markdown files using AI')
   .version('1.0.0');
 

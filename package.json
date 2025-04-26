@@ -1,6 +1,6 @@
 {
   "name": "mcp_agent_ts",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -9,7 +9,7 @@
     "build": "tsup"
   },
   "bin": {
-    "translate-md": "./dist/cli/translate.js"
+    "mcp_agent_ts-translate-md": "./dist/cli/translate.js"
   },
   "exports": {
     ".": "./dist/index.js",
