@@ -15,8 +15,8 @@ export async function translateText(
   options: TranslateOptions
 ): Promise<string> {
   const openai = options.openai || defaultOpenai;
-  const model = options.model || 'GLM-4-Flash';
-  const max_tokens = options.max_tokens || 9999;
+  const model = options.model || Env.default_model;
+  const max_tokens = options.max_tokens
   const temperature = options.temperature || 0.3;
 
   const completion = await openai.chat.completions.create({
