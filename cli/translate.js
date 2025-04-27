@@ -1,8 +1,63 @@
 #!/usr/bin/env node
-import "../chunk-FPFRGKCZ.js";
+import {
+  AiService
+} from "../chunk-FPFRGKCZ.js";
 
 // src/cli/translate.ts
 import { program } from "commander";
+
+// src/ai/translate.ts
+import { Effect } from "effect";
+function translateText(text, targetLanguage) {
+  return Effect.gen(function* () {
+    const ai = yield* AiService;
+    const completion = yield* Effect.tryPromise({
+      try: () => ai.openai.chat.completions.create({
+        model: ai.model,
+        messages: [
+          {
+            role: "system",
+            content: `You are a professional translator. Translate the following text to ${targetLanguage} while strictly preserving:
+1. Original formatting and markdown syntax
+2. Technical terms accuracy
+3. Any text inside markdown links like \`[\u4E2D\u6587\u6587\u6863](./README_zh.md)\` or \`[English Doc](./README.md)\` MUST REMAIN UNCHANGED
+4. Code blocks and inline code snippets MUST NOT be translated
+
+\u7279\u522B\u6CE8\u610F\uFF1A\u5982\u679C\u9047\u5230\u7C7B\u4F3C \`[...\u6587\u6863...](...)\` \u7684Markdown\u94FE\u63A5\uFF0C\u65E0\u8BBA\u5176\u4E2D\u662F\u4EC0\u4E48\u8BED\u8A00\uFF0C\u90FD\u539F\u6837\u4FDD\u7559\u4E0D\u8981\u7FFB\u8BD1`
+          },
+          { role: "user", content: text }
+        ],
+        max_tokens: ai.max_tokens,
+        temperature: ai.temperature,
+        stream: false
+      }),
+      catch: (e) => new Error(`Translation failed: ${e}`)
+    });
+    return completion.choices[0].message?.content || "";
+  });
+}
+function translateMarkdownFile(filePath, outputPath, targetLanguage) {
+  return Effect.gen(function* () {
+    const fs = yield* Effect.promise(() => import("fs/promises"));
+    const text = yield* Effect.tryPromise({
+      try: () => fs.readFile(filePath, "utf-8"),
+      catch: (e) => new Error(`Failed to read file: ${e}`)
+    });
+    const translated = yield* translateText(text, targetLanguage);
+    yield* Effect.tryPromise({
+      try: () => fs.writeFile(outputPath, translated),
+      catch: (e) => new Error(`Failed to write file: ${e}`)
+    });
+  });
+}
+
+// src/cli/translate.ts
+import path from "path";
+import { Effect as Effect3 } from "effect";
+
+// src/ai/openai.ts
+import { Effect as Effect2 } from "effect";
+import { OpenAI } from "openai";
 
 // src/env/index.ts
 import { config } from "dotenv";
@@ -22,64 +77,29 @@ var Env = {
 };
 
 // src/ai/openai.ts
-import { Effect } from "effect";
-import { OpenAI } from "openai";
 var configuration = {
   apiKey: Env.default_apiKey,
   baseURL: Env.default_apiBaseUrl
 };
 var defaultOpenai = new OpenAI(configuration);
 
-// src/ai/translate.ts
-async function translateText(text, options) {
-  const openai = options.openai || defaultOpenai;
-  const model = options.model || Env.default_model;
-  const max_tokens = options.max_tokens;
-  const temperature = options.temperature || 0.3;
-  const completion = await openai.chat.completions.create({
-    model,
-    messages: [
-      {
-        role: "system",
-        content: `You are a professional translator. Translate the following text to ${options.targetLanguage} while strictly preserving:
-1. Original formatting and markdown syntax
-2. Technical terms accuracy
-3. Any text inside markdown links like \`[\u4E2D\u6587\u6587\u6863](./README_zh.md)\` or \`[English Doc](./README.md)\` MUST REMAIN UNCHANGED
-4. Code blocks and inline code snippets MUST NOT be translated
-
-\u7279\u522B\u6CE8\u610F\uFF1A\u5982\u679C\u9047\u5230\u7C7B\u4F3C \`[...\u6587\u6863...](...)\` \u7684Markdown\u94FE\u63A5\uFF0C\u65E0\u8BBA\u5176\u4E2D\u662F\u4EC0\u4E48\u8BED\u8A00\uFF0C\u90FD\u539F\u6837\u4FDD\u7559\u4E0D\u8981\u7FFB\u8BD1`
-      },
-      { role: "user", content: text }
-    ],
-    max_tokens,
-    temperature,
-    stream: false
-  });
-  return completion.choices[0].message?.content || "";
-}
-async function translateMarkdownFile(filePath, outputPath, options) {
-  const fs = await import("fs/promises");
-  const text = await fs.readFile(filePath, "utf-8");
-  const translated = await translateText(text, options);
-  await fs.writeFile(outputPath, translated);
-}
-
 // src/cli/translate.ts
-import path from "path";
 program.name("mcp_agent_ts-translate-md").description("CLI tool to translate markdown files using AI").version("1.0.0");
 program.command("translate").description("Translate a markdown file to target language").requiredOption("-i, --input <path>", "Input markdown file path").requiredOption("-o, --output <path>", "Output file path").requiredOption("-l, --language <language>", 'Target language (e.g. "Chinese", "French")').action(async (options) => {
-  try {
-    console.log(`Translating ${options.input} to ${options.language}...`);
-    await translateMarkdownFile(
+  console.log(`Translating ${options.input} to ${options.language}...`);
+  const r = await Effect3.runPromise(
+    translateMarkdownFile(
       path.resolve(options.input),
       path.resolve(options.output),
-      { targetLanguage: options.language }
-    );
-    console.log(`Translation saved to ${options.output}`);
-  } catch (error) {
-    console.error("Translation failed:", error);
-    process.exit(1);
-  }
+      options.language
+    ).pipe(
+      Effect3.provideService(AiService, {
+        openai: defaultOpenai,
+        model: Env.default_model
+      })
+    )
+  );
+  console.log(`Translation saved to ${options.output}`);
 });
 program.parseAsync(process.argv).catch(console.error);
 //# sourceMappingURL=translate.js.map

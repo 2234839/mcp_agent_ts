@@ -4,7 +4,7 @@ import { OpenAI } from 'openai';
 
 type AI = {
     openai: OpenAI;
-    model?: string;
+    model: string;
     max_tokens?: number;
     temperature?: number;
 };
