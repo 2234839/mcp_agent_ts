@@ -4,10 +4,6 @@ import "../chunk-FPFRGKCZ.js";
 // src/cli/translate.ts
 import { program } from "commander";
 
-// src/ai/openai.ts
-import { Effect } from "effect";
-import { OpenAI } from "openai";
-
 // src/env/index.ts
 import { config } from "dotenv";
 var { parsed: env } = config();
@@ -26,6 +22,8 @@ var Env = {
 };
 
 // src/ai/openai.ts
+import { Effect } from "effect";
+import { OpenAI } from "openai";
 var configuration = {
   apiKey: Env.default_apiKey,
   baseURL: Env.default_apiBaseUrl
@@ -35,8 +33,8 @@ var defaultOpenai = new OpenAI(configuration);
 // src/ai/translate.ts
 async function translateText(text, options) {
   const openai = options.openai || defaultOpenai;
-  const model = options.model || "GLM-4-Flash";
-  const max_tokens = options.max_tokens || 9999;
+  const model = options.model || Env.default_model;
+  const max_tokens = options.max_tokens;
   const temperature = options.temperature || 0.3;
   const completion = await openai.chat.completions.create({
     model,
