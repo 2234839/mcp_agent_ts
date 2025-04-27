@@ -43,7 +43,13 @@ async function translateText(text, options) {
     messages: [
       {
         role: "system",
-        content: `You are a professional translator. Translate the following text to ${options.targetLanguage} while preserving the original formatting, markdown syntax, and technical terms accuracy.`
+        content: `You are a professional translator. Translate the following text to ${options.targetLanguage} while strictly preserving:
+1. Original formatting and markdown syntax
+2. Technical terms accuracy
+3. Any text inside markdown links like \`[\u4E2D\u6587\u6587\u6863](./README_zh.md)\` or \`[English Doc](./README.md)\` MUST REMAIN UNCHANGED
+4. Code blocks and inline code snippets MUST NOT be translated
+
+\u7279\u522B\u6CE8\u610F\uFF1A\u5982\u679C\u9047\u5230\u7C7B\u4F3C \`[...\u6587\u6863...](...)\` \u7684Markdown\u94FE\u63A5\uFF0C\u65E0\u8BBA\u5176\u4E2D\u662F\u4EC0\u4E48\u8BED\u8A00\uFF0C\u90FD\u539F\u6837\u4FDD\u7559\u4E0D\u8981\u7FFB\u8BD1`
       },
       { role: "user", content: text }
     ],
