@@ -53,11 +53,7 @@ function translateMarkdownFile(filePath, outputPath, targetLanguage) {
 
 // src/cli/translate.ts
 import path from "path";
-import { Effect as Effect3 } from "effect";
-
-// src/ai/openai.ts
 import { Effect as Effect2 } from "effect";
-import { OpenAI } from "openai";
 
 // src/env/index.ts
 import { config } from "dotenv";
@@ -76,24 +72,22 @@ var Env = {
   siyuan_apiKey: env.siyuan_apiKey
 };
 
-// src/ai/openai.ts
-var configuration = {
-  apiKey: Env.default_apiKey,
-  baseURL: Env.default_apiBaseUrl
-};
-var defaultOpenai = new OpenAI(configuration);
-
 // src/cli/translate.ts
+import OpenAI from "openai";
 program.name("mcp_agent_ts-translate-md").description("CLI tool to translate markdown files using AI").version("1.0.0");
 program.command("translate").description("Translate a markdown file to target language").requiredOption("-i, --input <path>", "Input markdown file path").requiredOption("-o, --output <path>", "Output file path").requiredOption("-l, --language <language>", 'Target language (e.g. "Chinese", "French")').action(async (options) => {
   console.log(`Translating ${options.input} to ${options.language}...`);
-  const r = await Effect3.runPromise(
+  const defaultOpenai = new OpenAI({
+    apiKey: Env.default_apiKey,
+    baseURL: Env.default_apiBaseUrl
+  });
+  const r = await Effect2.runPromise(
     translateMarkdownFile(
       path.resolve(options.input),
       path.resolve(options.output),
       options.language
     ).pipe(
-      Effect3.provideService(AiService, {
+      Effect2.provideService(AiService, {
         openai: defaultOpenai,
         model: Env.default_model
       })
