@@ -1,6 +1,6 @@
 {
   "name": "mcp_agent_ts",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "",
   "main": "index.js",
   "type": "module",

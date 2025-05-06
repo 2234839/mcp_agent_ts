@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import { translateMarkdownFile } from '../ai/translate';
-import { readFileSync } from 'fs';
 import path from 'path';
 import { Effect } from 'effect';
 import { AiService } from 'src/service';
-import { defaultOpenai } from 'src/ai/openai';
 import { Env } from 'src/env';
+import OpenAI from 'openai';
 
 program
   .name('mcp_agent_ts-translate-md')
@@ -22,6 +21,10 @@ program
   .action(async (options) => {
     console.log(`Translating ${options.input} to ${options.language}...`);
 
+    const defaultOpenai = new OpenAI({
+      apiKey: Env.default_apiKey,
+      baseURL: Env.default_apiBaseUrl,
+    });
     const r = await Effect.runPromise(
       translateMarkdownFile(
         path.resolve(options.input),

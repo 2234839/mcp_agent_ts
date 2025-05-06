@@ -1,6 +1,6 @@
 import { Context, Effect } from 'effect';
 import { AiService, McpClientService, SiyuanService } from './service';
-import { aiSimpleText, aiFunctionCall, defaultOpenai } from './ai/openai';
+import { aiSimpleText, aiFunctionCall } from './ai/openai';
 import { defaultClient } from './client';
 import { clientTransport, serverTransport } from './transport';
 import { testServer } from './server/testServer';
@@ -8,6 +8,7 @@ import { siyuanServer } from './server/siyuan';
 import { Env } from './env';
 import { callTool } from './client/util';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import OpenAI from 'openai';
 
 const testP = Effect.gen(function* () {
   const client = yield* McpClientService;
@@ -47,7 +48,10 @@ async function test() {
   // 这里必须要让 defalutServer 先连接
   await testServer.connect(serverTransport);
   await defaultClient.connect(clientTransport);
-
+  const defaultOpenai = new OpenAI({
+    apiKey: Env.default_apiKey,
+    baseURL: Env.default_apiBaseUrl,
+  });
   const context = Context.empty().pipe(
     Context.add(McpClientService, defaultClient),
     Context.add(AiService, {

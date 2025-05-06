@@ -1,13 +1,6 @@
 import { Effect } from 'effect';
 import { ClientOptions, OpenAI } from 'openai';
 import { AiService, McpClientService } from 'src/service';
-import { Env } from '../env';
-
-const configuration: ClientOptions = {
-  apiKey: Env.default_apiKey,
-  baseURL: Env.default_apiBaseUrl,
-};
-export const defaultOpenai = new OpenAI(configuration);
 
 export type AI = {
   openai: OpenAI;
@@ -25,19 +18,18 @@ const defaultConfig = {
 };
 export function ai搜索关键词提取(
   userInput: string,
-  ai: AI = { openai: defaultOpenai, model: Env.default_model }
 ): Effect.Effect<{ res: string[]; raw: string }, Error, AiService> {
   return Effect.gen(function* () {
-    const aiService = yield* AiService;
-    const aiWithService = { ...ai, openai: aiService.openai };
+    const ai = yield* AiService;
 
     const completion = yield* Effect.tryPromise({
-      try: () => aiWithService.openai.chat.completions.create({
-        model: aiWithService.model ?? defaultConfig.model,
-        messages: [
-          {
-            role: 'system',
-            content: `你是一名助理，专门协助用户进行搜索。请按照以下规则提供答案：
+      try: () =>
+        ai.openai.chat.completions.create({
+          model: ai.model,
+          messages: [
+            {
+              role: 'system',
+              content: `你是一名助理，专门协助用户进行搜索。请按照以下规则提供答案：
 
 1. 输出格式：**JSON 格式**，不要使用代码块,要确保你的回答可以直接被 JSON.parse。
 2. 内容要求：
@@ -51,52 +43,48 @@ export function ai搜索关键词提取(
 用户: “有哪些关键词”
 你: ["关键词1", "关键词2"]
 `,
-          },
-          { role: 'user', content: userInput },
-        ],
-        stream: false,
-        max_tokens: aiWithService.max_tokens ?? defaultConfig.max_tokens,
-        temperature: aiWithService.temperature ?? defaultConfig.temperature
-      }),
-    catch: (e) => new Error(`Keyword extraction failed: ${e}`)
-  });
+            },
+            { role: 'user', content: userInput },
+          ],
+          stream: false,
+          max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
+          temperature: ai.temperature ?? defaultConfig.temperature,
+        }),
+      catch: (e) => new Error(`Keyword extraction failed: ${e}`),
+    });
 
-  const resStr = completion.choices[0].message?.content || '';
-  let queryArr;
-  try {
-    if (resStr.startsWith('```')) {
-      const lines = resStr.split('\n');
-      lines[0] = '';
-      lines[lines.length - 1] = '';
-      queryArr = JSON.parse(lines.join('\n'));
-    } else {
-      queryArr = JSON.parse(resStr);
+    const resStr = completion.choices[0].message?.content || '';
+    let queryArr;
+    try {
+      if (resStr.startsWith('```')) {
+        const lines = resStr.split('\n');
+        lines[0] = '';
+        lines[lines.length - 1] = '';
+        queryArr = JSON.parse(lines.join('\n'));
+      } else {
+        queryArr = JSON.parse(resStr);
+      }
+    } catch (error) {
+      queryArr = [resStr];
     }
-  } catch (error) {
-    queryArr = [resStr];
-  }
-  return {
-    res: queryArr,
-    raw: resStr,
-  };
-});
+    return {
+      res: queryArr,
+      raw: resStr,
+    };
+  });
 }
-export function ai回答(
-  userInput: string,
-  searchMd: string,
-  ai: AI = { openai: defaultOpenai, model: Env.default_model }
-): Effect.Effect<{ res: string; raw: OpenAI.Chat.Completions.ChatCompletion }, Error, AiService> {
+export function ai回答(userInput: string, searchMd: string) {
   return Effect.gen(function* () {
-    const aiService = yield* AiService;
-    const aiWithService = { ...ai, openai: aiService.openai };
+    const ai = yield* AiService;
 
     const completion = yield* Effect.tryPromise({
-      try: () => aiWithService.openai.chat.completions.create({
-        model: aiWithService.model ?? defaultConfig.model,
-        messages: [
-          {
-            role: 'system',
-            content: `你是用户的笔记ai提问助手，请根据用户的问题和你检索到的笔记内容来回答用户的问题
+      try: () =>
+        ai.openai.chat.completions.create({
+          model: ai.model,
+          messages: [
+            {
+              role: 'system',
+              content: `你是用户的笔记ai提问助手，请根据用户的问题和你检索到的笔记内容来回答用户的问题
 ## 回答的格式
 
 你的回答要表示是基于哪些块的内容回答的，表现方式是在对应回答的后面添加 :[种花心得(这个块的内容摘要)](siyuan://blocks/20240113141417-va4uedb(笔记块的id))
@@ -110,18 +98,18 @@ export function ai回答(
 
 ## 注意你的回答最后面附加的链接 [] 内填的是这个块的摘要文本 () 中的 siyuan://blocks/id 是思源特有的链接方式
 `,
-          },
-          {
-            role: 'assistant',
-            content: `检索到的内容:\n${searchMd}`,
-          },
-          { role: 'user', content: userInput },
-        ],
-        max_tokens: aiWithService.max_tokens ?? defaultConfig.max_tokens,
-        temperature: aiWithService.temperature ?? defaultConfig.temperature,
-        stream: false,
-      }),
-      catch: (e) => new Error(`AI回答失败: ${e}`)
+            },
+            {
+              role: 'assistant',
+              content: `检索到的内容:\n${searchMd}`,
+            },
+            { role: 'user', content: userInput },
+          ],
+          max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
+          temperature: ai.temperature ?? defaultConfig.temperature,
+          stream: false,
+        }),
+      catch: (e) => new Error(`AI回答失败: ${e}`),
     });
 
     return {
@@ -138,10 +126,10 @@ export function aiFunctionCall(userInput: string) {
     const tools = yield* Effect.tryPromise(() => mcpClient.listTools());
     const ai = yield* AiService;
 
-    console.log('[tools]',tools);
+    console.log('[tools]', tools);
     const completion: OpenAI.Chat.Completions.ChatCompletion = yield* Effect.tryPromise(() =>
       ai.openai.chat.completions.create({
-        model: ai.model ?? defaultConfig.model,
+        model: ai.model,
         response_format: { type: 'json_object' },
         messages: [
           {
@@ -206,7 +194,7 @@ export function aiSimpleText(text: string) {
 
     const completion: OpenAI.Chat.Completions.ChatCompletion = yield* Effect.tryPromise(() =>
       ai.openai.chat.completions.create({
-        model: ai.model ?? defaultConfig.model,
+        model: ai.model,
         messages: [
           {
             role: 'system',
